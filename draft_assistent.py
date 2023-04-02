@@ -78,6 +78,67 @@ class CardManager(object):
         
         return result
 
+class DraftTracker(object):
+
+    def __init__(self, arena):
+        self.draftmsgnames = ['QuickDraftPack', 'QuickDraftPick', 'EventJoin']
+
+        self.arena = arena
+
+        self.draft_state = []
+        self.is_now_draft = None
+        self.event_type = None
+        self.set = None
+
+    def update(self):
+        self.arena.update()
+        arena_update = self.arena.new_messages
+
+        draft_related_msgs = [msg for msg in arena_update if msg.name in self.draftmsgnames]
+
+        if len(draft_related_msgs) != 0:
+            last_msg = draft_related_msgs[-1]
+        else:
+            if self.is_now_draft is None:
+                self.is_now_draft = False
+                return 
+
+        if self.is_now_draft is None:   # метод вызывается впервые после создания объекта
+
+            if last_msg.name == 'QuickDraftPack':
+                if last_msg.draft_status == 'Completed':
+                    self.is_now_draft = False
+                    return 
+                
+                else:
+                    self.is_now_draft = True
+                    raise Exception('not released yet scenario: ')
+                    #заполнить self.draft_state предыдущими паками и пиками
+        
+        elif self.is_now_draft is False:
+            
+            self.is_now_draft = True
+            
+            self.event_type = draft_related_msgs[0].event_type
+            self.set = draft_related_msgs[0].event_set
+
+            if len(draft_related_msgs) == 1:
+                return 
+            
+            draft_related_msgs = draft_related_msgs[1:]
+
+
+        if self.is_now_draft is True:
+            
+            if last_msg.name == 'QuickDraftPack':
+                if last_msg.draft_status == 'Completed':
+                    self.is_now_draft = False
+                    self.draft_state = []
+                    return '78 row'
+            
+        self.draft_state.extend(draft_related_msgs)
+
+
 
     
 class ArenaDraftAssistController(object):
