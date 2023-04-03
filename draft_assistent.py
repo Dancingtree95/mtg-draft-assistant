@@ -90,6 +90,17 @@ class DraftTracker(object):
         self.event_type = None
         self.set = None
 
+    @property
+    def is_now_pack(self):
+        if len(self.draft_state) == 0:
+            return False
+        
+        if self.draft_state[-1].name == 'QuickDraftPack':
+            return True
+        else:
+            return False
+        
+
     def _check_draft_compleated(self, last_msg):
         if last_msg.name == 'QuickDraftPack':
             if last_msg.draft_status == 'Completed':
@@ -102,6 +113,8 @@ class DraftTracker(object):
         self.set = msg.event_set
 
     def update_state(self):
+
+
         self.arena.update()
         arena_update = self.arena.new_messages
 
@@ -115,7 +128,7 @@ class DraftTracker(object):
         else:
             if self.is_now_draft is None:
                 self.is_now_draft = False
-                return 
+            return 
             
         if self.is_now_draft is None:
 
@@ -126,7 +139,7 @@ class DraftTracker(object):
             else:
                 self.is_now_draft = True
                 self._set_draft_fields(draft_related_msgs[event_join_msg_ids[-1]])
-                draft_related_msgs = draft_related_msgs[event_join_msg_ids[-1]:]
+                draft_related_msgs = draft_related_msgs[event_join_msg_ids[-1] + 1:]
         
         elif self.is_now_draft == False:
 
@@ -136,7 +149,8 @@ class DraftTracker(object):
             else:
                 self.is_now_draft = True
                 self._set_draft_fields(draft_related_msgs[event_join_msg_ids[-1]])
-                draft_related_msgs = draft_related_msgs[event_join_msg_ids[-1]:]
+                draft_related_msgs = draft_related_msgs[event_join_msg_ids[-1] + 1:]
+                event_join_msg_ids = []
 
         if self.is_now_draft == True:
 
@@ -148,7 +162,18 @@ class DraftTracker(object):
                 return
             
             if len(event_join_msg_ids) > 0:
-                
+                self.draft_state = []
+                self._set_draft_fields(draft_related_msgs[event_join_msg_ids[-1]])
+                draft_related_msgs = draft_related_msgs[event_join_msg_ids[-1] + 1:]
+
+
+        if len(draft_related_msgs) == 0:
+            return 
+        
+        self.draft_state.extend(draft_related_msgs)
+
+
+        return True
         
 
 
@@ -160,7 +185,7 @@ class ArenaDraftAssistController(object):
     def __init__(self, arena, card_manager, model):
         self.draftmsgnames = ['QuickDraftPack', 'QuickDraftPick', 'EventJoin']
 
-        self.arena = arena
+        self.draft = DraftTracker(arena)
         self.model = model
         self.card_manager = card_manager
 
@@ -171,69 +196,23 @@ class ArenaDraftAssistController(object):
 
     
     def get_UI_state_update(self):
-        self.arena.update()
-        arena_update = self.arena.new_messages
 
-        draft_related_msgs = [msg for msg in arena_update if msg.name in self.draftmsgnames]
+        resp = self.draft.update_state()
 
-        if len(draft_related_msgs) != 0:
-            last_msg = draft_related_msgs[-1]
-
-        if self.is_now_draft is None:   # метод вызывается впервые после создания объекта
-            if len(draft_related_msgs) == 0: # если клиент не запущен и в прошлый его запуск не играли драфт, 
-                self.is_now_draft = False    # либо клиент запущен до запуска ассистента и не играли драфт
-                return '42 row'
-            
-
-            if last_msg.name == 'QuickDraftPack':
-                if last_msg.draft_status == 'Completed':
-                    self.is_now_draft = False
-                    return '48 row'
-                
-                else:
-                    self.is_now_draft = True
-                    raise Exception('not released yet scenario: ')
-                    #заполнить self.draft_state предыдущими паками и пиками
+        if not resp:
+            return None
         
-        if self.is_now_draft is False:
-            if len(draft_related_msgs) == 0:
-                return '57 row'
-            
-            self.is_now_draft = True
-            
-            self.event_type = draft_related_msgs[0].event_type
-            self.set = draft_related_msgs[0].event_set
+        draft_state = self.draft.draft_state
 
-            if len(draft_related_msgs) == 1:
-                return '65 row'
-            
-            draft_related_msgs = draft_related_msgs[1:]
-
-
-        elif self.is_now_draft is True:
-            if len(draft_related_msgs) == 0:
-                return '72 row'
-            
-            if last_msg.name == 'QuickDraftPack':
-                if last_msg.draft_status == 'Completed':
-                    self.is_now_draft = False
-                    self.draft_state = []
-                    return '78 row'
-            
-        self.draft_state.extend(draft_related_msgs)
-        
-        if self.draft_state[-1].name == 'QuickDraftPick':
-            return '83 row'
-        
         
         # подготовить данные и передать в модель. подготовка включает преобразование списка с log msg в список с словарями {pack:[], pick:},
         # а также замену айди карт с ареновских на моделевские
 
         processed_draft_data = []
-        for i in range(0, len(self.draft_state) - 1, 2):
-            step = {'pack': self.draft_state[i].pack, 'pick': self.draft_state[i + 1].pick}
+        for i in range(0, len(draft_state) - 1, 2):
+            step = {'pack': draft_state[i].pack, 'pick': draft_state[i + 1].pick}
             processed_draft_data.append(step)
-        open_step = {'pack': self.draft_state[-1].pack, 'pick': None}
+        open_step = {'pack': draft_state[-1].pack, 'pick': None}
         processed_draft_data.append(open_step)
 
         for step in processed_draft_data:
