@@ -90,53 +90,67 @@ class DraftTracker(object):
         self.event_type = None
         self.set = None
 
-    def update(self):
+    def _check_draft_compleated(self, last_msg):
+        if last_msg.name == 'QuickDraftPack':
+            if last_msg.draft_status == 'Completed':
+                return True
+        
+        return False
+    
+    def _set_draft_fields(self, msg):
+        self.event_type = msg.event_type
+        self.set = msg.event_set
+
+    def update_state(self):
         self.arena.update()
         arena_update = self.arena.new_messages
 
         draft_related_msgs = [msg for msg in arena_update if msg.name in self.draftmsgnames]
 
+
         if len(draft_related_msgs) != 0:
             last_msg = draft_related_msgs[-1]
+            event_join_msg_ids = [i for i, msg in enumerate(draft_related_msgs) if msg.name == 'EventJoin']
+        
         else:
             if self.is_now_draft is None:
                 self.is_now_draft = False
                 return 
-
-        if self.is_now_draft is None:   # метод вызывается впервые после создания объекта
-
-            if last_msg.name == 'QuickDraftPack':
-                if last_msg.draft_status == 'Completed':
-                    self.is_now_draft = False
-                    return 
-                
-                else:
-                    self.is_now_draft = True
-                    raise Exception('not released yet scenario: ')
-                    #заполнить self.draft_state предыдущими паками и пиками
-        
-        elif self.is_now_draft is False:
             
-            self.is_now_draft = True
-            
-            self.event_type = draft_related_msgs[0].event_type
-            self.set = draft_related_msgs[0].event_set
+        if self.is_now_draft is None:
 
-            if len(draft_related_msgs) == 1:
+            if self._check_draft_compleated(last_msg):
+                self.is_now_draft = False
                 return 
             
-            draft_related_msgs = draft_related_msgs[1:]
+            else:
+                self.is_now_draft = True
+                self._set_draft_fields(draft_related_msgs[event_join_msg_ids[-1]])
+                draft_related_msgs = draft_related_msgs[event_join_msg_ids[-1]:]
+        
+        elif self.is_now_draft == False:
 
+            if self._check_draft_compleated(last_msg):
+                return 
+            
+            else:
+                self.is_now_draft = True
+                self._set_draft_fields(draft_related_msgs[event_join_msg_ids[-1]])
+                draft_related_msgs = draft_related_msgs[event_join_msg_ids[-1]:]
 
-        if self.is_now_draft is True:
+        if self.is_now_draft == True:
+
+            if self._check_draft_compleated(last_msg):
+                self.is_now_draft = False
+                self.draft_state = []
+                self.event_type = None
+                self.set = None
+                return
             
-            if last_msg.name == 'QuickDraftPack':
-                if last_msg.draft_status == 'Completed':
-                    self.is_now_draft = False
-                    self.draft_state = []
-                    return '78 row'
-            
-        self.draft_state.extend(draft_related_msgs)
+            if len(event_join_msg_ids) > 0:
+                
+        
+
 
 
 
