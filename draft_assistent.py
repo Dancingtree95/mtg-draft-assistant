@@ -114,7 +114,6 @@ class DraftTracker(object):
 
     def update_state(self):
 
-
         self.arena.update()
         arena_update = self.arena.new_messages
 
@@ -159,7 +158,7 @@ class DraftTracker(object):
                 self.draft_state = []
                 self.event_type = None
                 self.set = None
-                return
+                return 
             
             if len(event_join_msg_ids) > 0:
                 self.draft_state = []
@@ -171,9 +170,6 @@ class DraftTracker(object):
             return 
         
         self.draft_state.extend(draft_related_msgs)
-
-
-        return True
         
 
 
@@ -190,42 +186,50 @@ class ArenaDraftAssistController(object):
         self.card_manager = card_manager
 
         self.draft_state = []
-        self.is_now_draft = None
-        self.event_type = None
-        self.set = None
 
     
     def get_UI_state_update(self):
 
-        resp = self.draft.update_state()
+        self.draft.update_state()
 
-        if not resp:
-            return None
+        new_draft_state = self.draft.draft_state
+
+        if self.draft.is_now_draft == False:
+            self.draft_state = []
+            return 'no draft', None
+
+        elif not self.draft.is_now_pack:
+            return 'waiting for next pack', None
+
+        elif new_draft_state == self.draft_state:
+            return 'no changes', None
+                
         
-        draft_state = self.draft.draft_state
+        self.draft_state = new_draft_state[:]
 
         
         # подготовить данные и передать в модель. подготовка включает преобразование списка с log msg в список с словарями {pack:[], pick:},
         # а также замену айди карт с ареновских на моделевские
-
+    
         processed_draft_data = []
-        for i in range(0, len(draft_state) - 1, 2):
-            step = {'pack': draft_state[i].pack, 'pick': draft_state[i + 1].pick}
+        for i in range(0, len(self.draft_state) - 1, 2):
+            step = {'pack': self.draft_state[i].pack, 'pick': self.draft_state[i + 1].pick}
             processed_draft_data.append(step)
-        open_step = {'pack': draft_state[-1].pack, 'pick': None}
+        open_step = {'pack': self.draft_state[-1].pack, 'pick': None}
         processed_draft_data.append(open_step)
 
+
         for step in processed_draft_data:
-            step['pack'] = self.card_manager.map(step['pack'], self.set, 'mtgArenaId', 'name')
+            step['pack'] = self.card_manager.map(step['pack'], self.draft.set, 'mtgArenaId', 'name')
 
         
-        model_response = self.model(processed_draft_data, self.set)
+        model_response = self.model(processed_draft_data, self.draft.set)
         # response словарь вида {card_id : score}
 
         '''
         ui_response = {}
         for card_id in model_response:
-            card_name = self.card_manager.map(card_id, self.set, 'in_model_id', 'card_name')
+            card_name = self.card_manager.map(card_id, self.draft.set, 'in_model_id', 'card_name')
             ui_response[card_name] = model_response[card_id]
         '''
 
