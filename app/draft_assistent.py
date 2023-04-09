@@ -1,4 +1,4 @@
-from arena_parser import ArenaParser
+from app.arena_parser import ArenaParser
 import tkinter as tk
 from collections import defaultdict
 import pandas as pd
