@@ -40,6 +40,8 @@ class CardManager(object):
              for card_dict in sets_data[set_code]:
                 
                 name = card_dict['name']
+                if len(name.split(' // ')) == 2:
+                    name = name.split(' // ')[0]
                 data['name'].append(name)
 
                 mtgArenaId = card_dict['identifiers'].get('mtgArenaId', None)
@@ -77,6 +79,7 @@ class CardManager(object):
             result = result[0]
         
         return result
+    
 
 class DraftTracker(object):
 
@@ -139,6 +142,7 @@ class DraftTracker(object):
                 self.is_now_draft = True
                 self._set_draft_fields(draft_related_msgs[event_join_msg_ids[-1]])
                 draft_related_msgs = draft_related_msgs[event_join_msg_ids[-1] + 1:]
+                event_join_msg_ids = []
         
         elif self.is_now_draft == False:
 
@@ -235,7 +239,7 @@ class ArenaDraftAssistController(object):
 
         ui_response = model_response
 
-        return ui_response
+        return '', ui_response
 
 
 
