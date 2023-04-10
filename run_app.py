@@ -1,7 +1,7 @@
-from draft_assistent import CardManager, ArenaDraftAssistController
-from arena_parser import ArenaParser
-from gui import ArenaDraftAssistGUI
-from models import PickRate
+from app.draft_assistent import CardManager, ArenaDraftAssistController
+from app.arena_parser import ArenaParser
+from app.gui import ArenaDraftAssistGUI
+from app.models import PickRate
 
 
 MTG_LOG_PATH = "C:\\Users\\manic\\AppData\\LocalLow\\Wizards Of The Coast\\MTGA\\Player.log"
@@ -20,3 +20,4 @@ controller = ArenaDraftAssistController(arena, card_manager, model)
 gui = ArenaDraftAssistGUI(controller)
 
 gui.start()
+
