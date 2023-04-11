@@ -3,6 +3,8 @@ import numpy as np
 import sys
 import os
 
+from utils import save_on_disc, load_from_disc
+
 DRAFT_DATA_FOLDER_PATH = 'C:\\Users\\manic\\Desktop\\Draft.ai\\intermidiate data'
 
 
@@ -30,6 +32,9 @@ def make_train_test_datasets(data, seed = 42, test_size = 0.1):
     
     test_data = test_data.rename(columns = {'pack_cards' : 'candidates'})
 
+    train_data.reset_index(drop = True, inplace = True)
+    test_data.reset_index(drop = True, inplace = True)
+
 
     return train_data, test_data
 
@@ -43,11 +48,12 @@ if __name__ == '__main__':
     
     path = args[0]
 
-    file_name = os.path.split(path)[1].split('.')[0]
+    expansion = os.path.split(path)[1]
 
-    full_data = pd.read_parquet(path)
+    full_data = load_from_disc(path)
 
     train_data, test_data = make_train_test_datasets(full_data)
 
-    train_data.to_parquet(os.path.join(DRAFT_DATA_FOLDER_PATH, file_name + '_train.parquet'))
-    test_data.to_parquet(os.path.join(DRAFT_DATA_FOLDER_PATH, file_name + '_test.parquet'))
+    save_on_disc(train_data, os.path.join(DRAFT_DATA_FOLDER_PATH, expansion + '_train'), ['candidates', 'pool_cards'])
+    save_on_disc(test_data, os.path.join(DRAFT_DATA_FOLDER_PATH, expansion + '_test'), ['candidates', 'pool_cards'])
+

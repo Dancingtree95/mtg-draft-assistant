@@ -5,6 +5,10 @@ import tqdm
 import os
 import json
 
+
+from utils import save_on_disc, load_from_disc
+
+
 DRAFT_DATA_FOLDER_PATH = 'C:\\Users\\manic\\Desktop\\Draft.ai\\intermidiate data'
 CARD_TO_ID_FOLDER_PATH = 'C:\\Users\\manic\\Desktop\\Draft.ai\\modelIds'
 
@@ -63,7 +67,8 @@ if __name__ == '__main__':
     draft_data, cards_to_id = prepare_draft_data(i_path)
 
     expansion = draft_data.loc[0, 'expansion']
-    draft_data.to_parquet(os.path.join(DRAFT_DATA_FOLDER_PATH, expansion + '.parquet'))
+
+    save_on_disc(draft_data, os.path.join(DRAFT_DATA_FOLDER_PATH, expansion), ['pack_cards', 'pool_cards'])
 
     with open(os.path.join(CARD_TO_ID_FOLDER_PATH, expansion), 'w', encoding = 'utf-8') as f:
         f.write(json.dumps(cards_to_id))
