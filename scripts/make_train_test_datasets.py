@@ -28,7 +28,8 @@ def make_train_test_datasets(data, seed = 42, test_size = 0.1):
 
     train_data['candidates'] = train_data.apply(lambda x : [[x[pick_index], card] for card in x[pack_cards_index] if x[pick_index] != card], axis = 1)
     train_data = train_data.drop('pack_cards', axis = 1) \
-                           .explode('candidates')
+                           .explode('candidates') \
+                           .dropna(subset = ['candidates'])
     
     test_data = test_data.rename(columns = {'pack_cards' : 'candidates'})
 

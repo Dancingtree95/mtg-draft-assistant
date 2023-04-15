@@ -59,12 +59,12 @@ class DraftDataset(Dataset):
 
 
 if __name__ == '__main__':
-    dataset = DraftDataset('C:\\Users\\manic\\Desktop\\Draft.ai\\intermidiate data\\NEO_test', train = False)
+    dataset = DraftDataset('C:\\Users\\manic\\Desktop\\Draft.ai\\intermidiate data\\NEO_train', train = True)
 
     dataloader = DataLoader(dataset, collate_fn=custom_collate_fn, batch_size= 100)
 
-    for meta, pool, cand in tqdm(dataloader):
-        print(meta)
-        print(pool)
-        print(cand)
-        break
+    for pool, cand in tqdm(dataloader):
+        #print(pool)
+        #print(cand)
+        #break
+        pass
