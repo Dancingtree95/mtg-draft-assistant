@@ -6,6 +6,10 @@ def RankLoss(pair_scores, device):
      logits = pair_scores[:,0] - pair_scores[:,1]
      return torch.nn.BCEWithLogitsLoss()(logits, pad_label)
 
+def MarginLoss(pair_scores, device, margin = 0):
+     pad_label = torch.ones(pair_scores.size(0)).to(device)
+     return torch.nn.MarginRankingLoss(margin)(pair_scores[:,0], pair_scores[:,1], pad_label)
+
 def _one_epoch_training_loop_without_sample_weights(model, dataloader, optimizer, device):
      model.train()
 
@@ -34,22 +38,16 @@ def _model_inference_for_dataset(model, dataloader, device):
      scores = []
      for meta_batch, pool_batch, cand_batch in tqdm.tqdm(dataloader):
           
-          output = model(pool_batch.to(device), cand_batch.to(device)).detach().cpu()
+          with torch.no_grad():
+               output = model(pool_batch.to(device), cand_batch.to(device)).cpu()
 
           meta.extend(meta_batch)
           for i in range(output.size(0)):
                mask = cand_batch[i] > 0
-               cand.append(cand_batch[i, mask].tolist())
+               cand.append((cand_batch[i, mask] - 1).tolist())
                scores.append(output[i, mask].tolist())
      
      return meta, cand, scores
-     
-                
-                
-                
-
-
-
 
 
 
@@ -61,7 +59,8 @@ def _save_model(model, path):
      torch.save(model.state_dict(), path)
 
 def _load_model(model, path):
-     return model.load_state_dict(torch.load(path))
+     model.load_state_dict(torch.load(path))
+     return model
 
 if __name__ == '__main__':
      from torch.optim import Adam
