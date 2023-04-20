@@ -37,15 +37,12 @@ class MLP_Pick_Scorer(torch.nn.Module):
 
     def __init__(self, input_size, hidden_sizes, **kwargs):
         super().__init__()
-
         self.input_size = input_size
-
         self._pool_encoder = MLP(input_size, hidden_sizes, **kwargs) 
-
+        self._pool_encoder.append(torch.nn.Tanh())
         self._cards_embedings = torch.nn.Embedding(input_size + 1, embedding_dim=hidden_sizes[-1], padding_idx=0)
 
     def _pool_one_hot_encode(self, input):
-
         return torch.nn.functional.one_hot(input, self.input_size + 1).sum(axis = 1)[:, 1:].to(torch.float32)
     
     def forward(self, pool, conds):
@@ -54,6 +51,35 @@ class MLP_Pick_Scorer(torch.nn.Module):
         encoded_pool = self._pool_encoder(pool)
         output = torch.bmm(conds_embeds, encoded_pool.unsqueeze(-1)).squeeze(-1)
         return output
+    
+
+
+
+class MLP_Pick_Scorer_CE(torch.nn.Module):
+
+    def __init__(self, input_size, hidden_sizes, **kwargs):
+        super().__init__()
+        self.input_size = input_size
+        hidden_sizes += [input_size]
+        self._pool_encoder = MLP(input_size, hidden_sizes, **kwargs) 
+        
+
+    def _pool_one_hot_encode(self, input):
+        return torch.nn.functional.one_hot(input, self.input_size + 1).sum(axis = 1)[:, 1:].to(torch.float32)
+    
+    def forward(self, pool):
+        pool = self._pool_one_hot_encode(pool)
+        return self._pool_encoder(pool)
+
+    
+class Transformer_Pick_Scorer(torch.nn.Module):
+
+    def __init__(self):
+        pass
+
+    def forward(self):
+        pass
+
 
             
 

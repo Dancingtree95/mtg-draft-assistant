@@ -5,65 +5,81 @@ import pandas as pd
 #from mtg_draft_assistant.model.utils import load_from_disc
 from .utils import load_from_disc
 from tqdm import tqdm
+import numpy as np
 
 
-def custom_collate_fn(batch):
+def train_rank_collator(batch):
     batch = list(zip(*batch))
-    if len(batch) == 2:
-        pool, cand = batch
 
-        pool = [LongTensor(row) + 1 for row in pool]
-        pool = pad_sequence(pool, batch_first = True)
-        
-        cand = LongTensor(cand) + 1
+    pool, cand = batch
 
-        return pool, cand
+    pool = [LongTensor(row) + 1 for row in pool]
+    pool = pad_sequence(pool, batch_first = True)
     
-    else:
-        meta, pool, cand = batch
+    cand = LongTensor(cand) + 1
 
-        pool = [LongTensor(row) + 1 for row in pool]
-        pool = pad_sequence(pool, batch_first = True)
+    return pool, cand
 
-        cand = [LongTensor(row) + 1 for row in cand]
-        cand = pad_sequence(cand, batch_first = True)
+def infer_collator(batch):
+    batch = list(zip(*batch))
 
-        return meta, pool, cand
+    *meta, pool, cand = batch
+
+    pool = [LongTensor(row) + 1 for row in pool]
+    pool = pad_sequence(pool, batch_first = True)
+
+    cand = [LongTensor(row) + 1 for row in cand]
+    cand = pad_sequence(cand, batch_first = True)
+
+    meta = list(zip(*meta))
+
+    return meta, pool, cand
+
+def train_collator(batch):
+    batch = list(zip(*batch))
+
+    pool, cand, target = batch
+
+    pool = [LongTensor(row) + 1 for row in pool]
+    pool = pad_sequence(pool, batch_first = True)
+
+    cand = [LongTensor(row) + 1 for row in cand]
+    cand = pad_sequence(cand, batch_first = True)
+
+    target = LongTensor(target)
+
+    return pool, cand, target
+
+
 
 
 class DraftDataset(Dataset):
     
-    def __init__(self, path, train = True):
+    def __init__(self, path, columns):
 
         data = load_from_disc(path)
 
-        self.train = train
+        self.cols = columns
 
-        self.pool = data['pool_cards'].to_list()
-        self.candidates = data['candidates'].to_list()
-
-        if not train:
-            self.draft_id = data['draft_id'].to_list()
-            self.pack_num = data['pack_number'].to_list()
-            self.pick_num = data['pick_number'].to_list()
-            self.pick = data['pick'].to_list()
+        for col in columns:
+            setattr(self, col, data[col].to_numpy())
+        
+        self._lengths = data.shape[0]
 
     def __len__(self):
-        return len(self.pool)
+    
+        return self._lengths
 
     def __getitem__(self, idx):
 
-        if self.train:
-            return self.pool[idx], self.candidates[idx]
-        else:
-            return (self.draft_id[idx], self.pack_num[idx], self.pick_num[idx], self.pick[idx]), self.pool[idx], self.candidates[idx]
+        return tuple(getattr(self, col)[idx] for col in self.cols)
 
 
 
 if __name__ == '__main__':
     dataset = DraftDataset('C:\\Users\\manic\\Desktop\\Draft.ai\\intermidiate data\\NEO_test', train = False)
 
-    dataloader = DataLoader(dataset, collate_fn=custom_collate_fn, batch_size= 100)
+    dataloader = DataLoader(dataset, collate_fn=infer_collator, batch_size= 100)
 
     for meta, pool, cand in tqdm(dataloader):
         #print(pool)

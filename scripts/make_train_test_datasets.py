@@ -24,7 +24,7 @@ if __name__ == '__main__':
     ##############################################
     seed = 42
     test_size = 0.1
-    cols = ['draft_id', 'pick', 'pack_cards', 'pool_cards', 'pack_number', 'pick_number']
+    cols = ['draft_id', 'pick', 'pack_cards', 'pool_cards', 'pack_number', 'pick_number', 'rank']
 
     draft_ids = data['draft_id'].unique()
     np.random.seed(seed)
