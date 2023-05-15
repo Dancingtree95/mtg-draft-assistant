@@ -70,7 +70,7 @@ class QuickDraftPackMsg(LogMessage):
         content = content['Payload']
         self.pack_number = content['PackNumber']
         self.pick_number = content['PickNumber']
-        self.pack = map(int, content['DraftPack'])
+        self.pack = list(map(int, content['DraftPack']))
         self.draft_status = content['DraftStatus']
 
     @classmethod

@@ -58,6 +58,7 @@ class CardManager(object):
         cards = pd.DataFrame(data)
         cards = cards.dropna(subset = ['mtgArenaId', 'modelId'])
         cards = cards.astype(dtype)
+        cards = cards.drop_duplicates()
         self.cards = cards
 
          
@@ -66,13 +67,15 @@ class CardManager(object):
         # пара set и input_repr должны быть уникальными идентификаторами карты
         if not isinstance(cards, list):
             cards = [cards]
-        
         result = []
 
         variant = self.cards.loc[self.cards.set == set].set_index(input_repr)
 
+
         for old_repr in cards:
             new_repr = variant.loc[old_repr, output_repr]
+            if isinstance(new_repr, pd.Series):
+                new_repr = new_repr.iloc[0]
             result.append(new_repr)
         
         if len(result) == 1:
@@ -183,7 +186,6 @@ class DraftTracker(object):
 class ArenaDraftAssistController(object):
 
     def __init__(self, arena, card_manager, model):
-        self.draftmsgnames = ['QuickDraftPack', 'QuickDraftPick', 'EventJoin']
 
         self.draft = DraftTracker(arena)
         self.model = model
@@ -224,20 +226,18 @@ class ArenaDraftAssistController(object):
 
 
         for step in processed_draft_data:
-            step['pack'] = self.card_manager.map(step['pack'], self.draft.set, 'mtgArenaId', 'name')
+            step['pack'] = self.card_manager.map(step['pack'], self.draft.set, 'mtgArenaId', 'modelId')
+            if step['pick'] is not None:
+               step['pick'] = self.card_manager.map(step['pick'], self.draft.set, 'mtgArenaId', 'modelId')
 
-        
         model_response = self.model(processed_draft_data, self.draft.set)
         # response словарь вида {card_id : score}
 
-        '''
         ui_response = {}
         for card_id in model_response:
-            card_name = self.card_manager.map(card_id, self.draft.set, 'in_model_id', 'card_name')
+            card_name = self.card_manager.map(card_id, self.draft.set, 'modelId', 'name')
             ui_response[card_name] = model_response[card_id]
-        '''
 
-        ui_response = model_response
 
         return '', ui_response
 

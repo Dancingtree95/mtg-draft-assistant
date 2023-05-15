@@ -52,6 +52,8 @@ class MLP_Pick_Scorer(torch.nn.Module):
         output = torch.bmm(conds_embeds, encoded_pool.unsqueeze(-1)).squeeze(-1)
         return output
     
+    
+    
 
 
 
@@ -60,7 +62,7 @@ class MLP_Pick_Scorer_CE(torch.nn.Module):
     def __init__(self, input_size, hidden_sizes, **kwargs):
         super().__init__()
         self.input_size = input_size
-        hidden_sizes += [input_size]
+        hidden_sizes = hidden_sizes + [input_size]
         self._pool_encoder = MLP(input_size, hidden_sizes, **kwargs) 
         
 
@@ -70,6 +72,23 @@ class MLP_Pick_Scorer_CE(torch.nn.Module):
     def forward(self, pool):
         pool = self._pool_one_hot_encode(pool)
         return self._pool_encoder(pool)
+    
+    def infer(self, input):
+        pool = []
+        for step in input:
+            pick = step['pick']
+            if pick is not None:
+                pool.append(pick)
+        pack = input[-1]['pack']
+        pool = [card_id + 1 for card_id in pool] + [0]
+        pool = torch.LongTensor(pool).unsqueeze(0)
+        self.eval()
+        with torch.no_grad():
+            output = self(pool)
+        scores = output.squeeze(0)[pack].tolist()
+        return {card_id : score for card_id, score in zip(pack, scores)}
+        
+        
 
 class MLP_PickPack_Scorer_CE(torch.nn.Module):
 
@@ -164,7 +183,9 @@ class Transformer_Pick_Scorer(torch.nn.Module):
 
 
             
-
+models_buffer = {
+    "MLP_Pick_Scorer_CE" : MLP_Pick_Scorer_CE
+}
 
 
 
