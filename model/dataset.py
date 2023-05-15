@@ -1,5 +1,5 @@
 from torch.utils.data import Dataset, DataLoader
-from torch import LongTensor
+from torch import LongTensor, FloatTensor
 from torch.nn.utils.rnn import pad_sequence
 import pandas as pd
 #from mtg_draft_assistant.model.utils import load_from_disc
@@ -50,14 +50,34 @@ def train_collator(batch):
 
     return pool, cand, target
 
+def train_collator_weights(batch):
+    batch = list(zip(*batch))
+
+    pool, cand, target, weights = batch
+
+    pool = [LongTensor(row) + 1 for row in pool]
+    pool = pad_sequence(pool, batch_first = True)
+
+    cand = [LongTensor(row) + 1 for row in cand]
+    cand = pad_sequence(cand, batch_first = True)
+
+    target = LongTensor(target)
+
+    weights = FloatTensor(weights)
+
+    return pool, cand, target, weights
+
 
 
 
 class DraftDataset(Dataset):
     
-    def __init__(self, path, columns):
+    def __init__(self, path, columns, transform = None):
 
         data = load_from_disc(path)
+
+        if transform is not None:
+            transform(data)
 
         self.cols = columns
 
