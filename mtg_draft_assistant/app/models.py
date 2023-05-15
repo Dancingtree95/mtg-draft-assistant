@@ -1,5 +1,5 @@
 import json
-from model.models import MLP_Pick_Scorer_CE
+from mtg_draft_assistant.model.models import MLP_Pick_Scorer_CE
 
 class PickRate(object):
     def __init__(self, path):

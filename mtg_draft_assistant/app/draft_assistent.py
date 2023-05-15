@@ -1,4 +1,4 @@
-from app.arena_parser import ArenaParser
+from mtg_draft_assistant.app.arena_parser import ArenaParser
 import tkinter as tk
 from collections import defaultdict
 import pandas as pd

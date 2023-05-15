@@ -1,7 +1,7 @@
-from app.draft_assistent import CardManager, ArenaDraftAssistController
-from app.arena_parser import ArenaParser
-from app.gui import ArenaDraftAssistGUI
-from app.models import PickRate
+from mtg_draft_assistant.app.draft_assistent import CardManager, ArenaDraftAssistController
+from mtg_draft_assistant.app.arena_parser import ArenaParser
+from mtg_draft_assistant.app.gui import ArenaDraftAssistGUI
+from mtg_draft_assistant.app.models import PickRate
 
 
 MTG_LOG_PATH = "C:\\Users\\manic\\AppData\\LocalLow\\Wizards Of The Coast\\MTGA\\Player.log"
