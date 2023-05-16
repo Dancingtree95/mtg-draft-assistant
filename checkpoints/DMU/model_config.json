@@ -1,0 +1,1 @@
+{"name": "MLP_Pick_Scorer_CE", "params": {"input_size": 266, "hidden_sizes": [300, 300, 300], "norm_layer": true}}
