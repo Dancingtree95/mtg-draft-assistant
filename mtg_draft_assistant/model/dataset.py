@@ -72,9 +72,7 @@ def train_collator_weights(batch):
 
 class DraftDataset(Dataset):
     
-    def __init__(self, path, columns, transform = None):
-
-        data = load_from_disc(path)
+    def __init__(self, data, columns, transform = None):
 
         if transform is not None:
             transform(data)
@@ -85,6 +83,16 @@ class DraftDataset(Dataset):
             setattr(self, col, data[col].to_numpy())
         
         self._lengths = data.shape[0]
+    
+    @classmethod
+    def build_from_disc(cls, path, columns, transform = None):
+        data = load_from_disc(path)
+        return cls(data, columns, transform)
+    
+    @classmethod
+    def build_from_df(cls, df, columns, transform = None):
+        return cls(df, columns, transform)
+
 
     def __len__(self):
     
