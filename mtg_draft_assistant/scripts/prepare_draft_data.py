@@ -6,7 +6,7 @@ import os
 import json
 
 
-from utils import save_on_disc, load_from_disc
+from .utils import save_on_disc, load_from_disc
 
 
 DRAFT_DATA_FOLDER_PATH = 'C:\\Users\\manic\\Desktop\\Draft.ai\\intermidiate data'

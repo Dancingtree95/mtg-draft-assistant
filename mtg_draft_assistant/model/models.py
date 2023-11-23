@@ -1,4 +1,6 @@
 import torch
+from .train import _one_epoch_trainig_loop_CE, CELoss
+from .dataset import train_collator
 
 
 
@@ -87,6 +89,24 @@ class MLP_Pick_Scorer_CE(torch.nn.Module):
             output = self(pool)
         scores = output.squeeze(0)[pack].tolist()
         return {card_id : score for card_id, score in zip(pack, scores)}
+    
+    
+    def fit(self, dataset, n_epoch = 3, lr = 0.0002, batch_size = 500, device = None):
+        if device is None:
+            if torch.cuda.is_available():
+                device = torch.device('cuda')
+            else:
+                device = torch.device('cpu')
+        
+        self.to(device)
+        
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size = batch_size, collate_fn=train_collator, shuffle=True)
+        optim = torch.optim.Adam(self.parameters(), lr = lr)
+        losses = []
+        for i in range(n_epoch):
+            losses += _one_epoch_trainig_loop_CE(self, dataloader, optim, device)
+        
+        self._losses = losses
         
         
 
